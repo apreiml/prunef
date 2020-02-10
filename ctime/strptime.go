@@ -81,6 +81,11 @@ func (state *parseState) parse() {
 
 func (state *parseState) parseFormat() {
     switch f := state.readFormat(); f {
+    case '%':
+        c := state.read(1)[0]
+        if c != '%' {
+            panic(fmt.Sprintf("Expected %% got %c", c))
+        }
     case 'Y':
         log.Printf("parse year")
         state.year = state.readInt(4)

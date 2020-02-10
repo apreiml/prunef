@@ -9,6 +9,7 @@ func TestParseFail(t *testing.T) {
         format, in string
     }{
         {"asdf", "jkld"},
+        {"%", "%"},
     }
 
     for _, c := range cases {
@@ -25,6 +26,7 @@ func TestSimple(t *testing.T) {
         expected string
     }{
         {"nodate", "nodate", "0001-01-01T00:00:00Z"},
+        {"%%", "%", "0001-01-01T00:00:00Z"},
         {"%Y", "2020", "2020-01-01T00:00:00Z"},
     }
 
