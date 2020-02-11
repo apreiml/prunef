@@ -12,7 +12,7 @@ type parseState struct {
     format []rune
     value []rune
     indexFormat, indexS int
-    year, month, day, hour, min, sec int
+    year, month, day, hour, minute, second int
 }
 
 
@@ -29,7 +29,7 @@ func Parse(format, value string, loc *time.Location) (t time.Time, err error) {
     state.parse()
 
     return time.Date(state.year, time.Month(state.month), state.day, state.hour,
-                     state.min, state.sec, 0, loc), nil
+                     state.minute, state.second, 0, loc), nil
 }
 
 func (state *parseState) isEndOfFormat() bool {
@@ -48,6 +48,13 @@ func (state *parseState) read(chars int) []rune {
 
     state.indexS = end
     return state.value[begin:end]
+}
+
+func (state *parseState) expect(expected string) {
+    got := string(state.read(len(expected)))
+    if got != expected {
+        panic(fmt.Sprintf("Didn't expect %s", got))
+    }
 }
 
 func (state *parseState) readInt(chars int) int {
@@ -82,13 +89,27 @@ func (state *parseState) parse() {
 func (state *parseState) parseFormat() {
     switch f := state.readFormat(); f {
     case '%':
-        c := state.read(1)[0]
-        if c != '%' {
-            panic(fmt.Sprintf("Expected %% got %c", c))
-        }
+        state.expect("%")
     case 'Y':
-        log.Printf("parse year")
         state.year = state.readInt(4)
+    case 'm':
+        state.month = state.readInt(2)
+    case 'd':
+        state.day = state.readInt(2)
+    case 'D':
+        state.month = state.readInt(2)
+        state.expect("/")
+        state.day = state.readInt(2)
+        state.expect("/")
+        state.year = state.readInt(4)
+    case 'H':
+        state.hour = state.readInt(2)
+    case 'M':
+        state.minute = state.readInt(2)
+    case 'S':
+        state.second = state.readInt(2)
+    default:
+        panic(fmt.Sprintf("Unsupported format specifier %c. Patches are welcome.", f))
     }
 }
 
