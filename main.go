@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"git.sr.ht/apreiml/prunef/ctime"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -29,6 +30,11 @@ type archive struct {
 }
 
 func main() {
+	flag.Usage = func() {
+		fmt.Printf("Usage: %s [options] FORMAT\n", filepath.Base(os.Args[0]))
+		flag.PrintDefaults()
+	}
+
 	flag.UintVar(&config.secondly, "keep-secondly", 0, "Number of secondly entries to keep.")
 	flag.UintVar(&config.minutely, "keep-minutely", 0, "Number of minutely entries to keep.")
 	flag.UintVar(&config.hourly, "keep-hourly", 0, "Number of hourly entries to keep.")
