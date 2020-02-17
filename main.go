@@ -13,7 +13,7 @@ var location = time.Local
 var format = "thor.server.aktrophy.at-%Y-%m-%d_%H-%M-%S"
 
 var config = struct {
-    hourly, daily, monthly, yearly uint
+    hourly, daily, weekly, monthly, yearly uint
     utc, printSlots, inverse bool
 }{}
 
@@ -30,6 +30,7 @@ type archive struct {
 func main() {
     flag.UintVar(&config.hourly, "keep-hourly", 0, "Number of hourly entries to keep.")
     flag.UintVar(&config.daily, "keep-daily", 0, "Number of daily entries to keep.")
+    flag.UintVar(&config.weekly, "keep-weekly", 0, "Number of weekly entries to keep.")
     flag.UintVar(&config.monthly, "keep-monthly", 0, "Number of monthly entries to keep.")
     flag.UintVar(&config.yearly, "keep-yearly", 0, "Number of yearly entries to keep.")
     flag.BoolVar(&config.utc, "utc", false, "Parse dates as UTC.")
@@ -86,8 +87,8 @@ func main() {
 }
 
 func initArchive() archive {
-    var countSlots uint = 1 +
-        config.hourly + config.daily + config.monthly + config.yearly
+    var countSlots uint = 1 + config.hourly + config.daily + config.weekly + 
+        config.monthly + config.yearly
     var a = archive{slots: make([]slot, countSlots)}
     var t = time.Now().UTC()
     var index int = 1
@@ -97,7 +98,7 @@ func initArchive() archive {
     t = t.Truncate(time.Hour)
     d, err := time.ParseDuration("1h")
     if err != nil {
-        panic("invalid hourly duration")
+        panic("Implementation Fail: Invalid hourly duration")
     }
     for i := uint(0); i < config.hourly; i++ {
         a.slots[index].maxTime = time.Time(t)
@@ -109,6 +110,13 @@ func initArchive() archive {
     for i := uint(0); i < config.daily; i++ {
         a.slots[index].maxTime = time.Time(t)
         t = t.AddDate(0, 0, -1)
+        index += 1
+    }
+
+    t = endOfPreviousWeek(t)
+    for i := uint(0); i < config.weekly; i++ {
+        a.slots[index].maxTime = time.Time(t)
+        t = t.AddDate(0, 0, -7)
         index += 1
     }
 
@@ -127,6 +135,10 @@ func initArchive() archive {
     }
 
     return a
+}
+
+func endOfPreviousWeek(t time.Time) time.Time {
+    return t.AddDate(0, 0, -int(t.Weekday()))
 }
 
 func (s slot) String() string {
