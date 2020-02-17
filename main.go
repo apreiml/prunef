@@ -15,7 +15,7 @@ var format string
 
 var config = struct {
 	secondly, minutely, hourly, daily, weekly, monthly, yearly uint
-	utc, printSlots, inverse                                   bool
+	utc, printSlots, invert                                   bool
 }{}
 
 type slot struct {
@@ -43,7 +43,7 @@ func main() {
 	flag.UintVar(&config.monthly, "keep-monthly", 0, "Number of monthly entries to keep.")
 	flag.UintVar(&config.yearly, "keep-yearly", 0, "Number of yearly entries to keep.")
 	flag.BoolVar(&config.utc, "utc", false, "Expect entry dates in UTC.")
-	flag.BoolVar(&config.inverse, "inverse", false, "Show entries to keep instead of entries to prune.")
+	flag.BoolVar(&config.invert, "invert", false, "Show entries to keep instead of entries to prune.")
 	flag.BoolVar(&config.printSlots, "print-slots", false, "Print slots and exit.")
 	flag.Parse()
 
@@ -74,7 +74,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		if out != "" && !config.inverse {
+		if out != "" && !config.invert {
 			fmt.Println(out)
 		}
 	}
@@ -83,7 +83,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if config.inverse {
+	if config.invert {
 		archive.printValues()
 	}
 }
@@ -187,7 +187,7 @@ func (a *archive) swapIn(entry string) (string, error) {
 
 	// do not prune entries, that are made while running prunef
 	if t.After(a.slots[0].maxTime) {
-		if config.inverse {
+		if config.invert {
 			fmt.Println(entry)
 		}
 		return "", nil

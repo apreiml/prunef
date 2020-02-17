@@ -16,7 +16,7 @@ prunef -keep-daily 7 \
        "example.org_%Y-%m-%d_%H-%M-%S.tar.gz"
 ```
 
-To list backups that will should be kept use the `-inverse` option.
+To list backups that will should be kept use the `-invert` option.
 
 By default it will parse the dates as created from the local timezone
 and it works internal with UTC only. If the entries are created in
