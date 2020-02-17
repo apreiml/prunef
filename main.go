@@ -13,7 +13,7 @@ var location = time.Local
 var format = "thor.server.aktrophy.at-%Y-%m-%d_%H-%M-%S"
 
 var config = struct {
-    hourly, daily, weekly, monthly, yearly uint
+    secondly, minutely, hourly, daily, weekly, monthly, yearly uint
     utc, printSlots, inverse bool
 }{}
 
@@ -28,6 +28,8 @@ type archive struct {
 }
 
 func main() {
+    flag.UintVar(&config.secondly, "keep-secondly", 0, "Number of secondly entries to keep.")
+    flag.UintVar(&config.minutely, "keep-minutely", 0, "Number of minutely entries to keep.")
     flag.UintVar(&config.hourly, "keep-hourly", 0, "Number of hourly entries to keep.")
     flag.UintVar(&config.daily, "keep-daily", 0, "Number of daily entries to keep.")
     flag.UintVar(&config.weekly, "keep-weekly", 0, "Number of weekly entries to keep.")
@@ -87,16 +89,38 @@ func main() {
 }
 
 func initArchive() archive {
-    var countSlots uint = 1 + config.hourly + config.daily + config.weekly + 
-        config.monthly + config.yearly
+    var countSlots uint = 1 + config.secondly + config.minutely + config.hourly +
+        config.daily + config.weekly + config.monthly + config.yearly
     var a = archive{slots: make([]slot, countSlots)}
     var t = time.Now().UTC()
     var index int = 1
 
     a.slots[0].maxTime = time.Time(t)
 
+    t = t.Truncate(time.Second)
+    d, err := time.ParseDuration("1s")
+    if err != nil {
+        panic("Implementation Fail: Invalid minutely duration")
+    }
+    for i := uint(0); i < config.secondly; i++ {
+        a.slots[index].maxTime = time.Time(t)
+        t = t.Add(-d)
+        index += 1
+    }
+
+    t = t.Truncate(time.Minute)
+    d, err = time.ParseDuration("1m")
+    if err != nil {
+        panic("Implementation Fail: Invalid minutely duration")
+    }
+    for i := uint(0); i < config.minutely; i++ {
+        a.slots[index].maxTime = time.Time(t)
+        t = t.Add(-d)
+        index += 1
+    }
+
     t = t.Truncate(time.Hour)
-    d, err := time.ParseDuration("1h")
+    d, err = time.ParseDuration("1h")
     if err != nil {
         panic("Implementation Fail: Invalid hourly duration")
     }
