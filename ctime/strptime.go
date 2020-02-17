@@ -1,3 +1,5 @@
+// ctime provides time utils that work with posix format specifiers
+// like used in strftime(3)
 package ctime
 
 import (
@@ -25,8 +27,7 @@ func Parse(format, value string, loc *time.Location) (t time.Time, err error) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recoverd parsing")
-			err = errors.New(fmt.Sprintf("Parsing failed: %s", r))
+			err = errors.New(fmt.Sprintf("Parsing date failed: %s", r))
 		}
 	}()
 
