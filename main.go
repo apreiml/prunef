@@ -25,6 +25,7 @@ type slot struct {
 
 type archive struct {
     slots []slot
+    numSlots uint
 }
 
 func main() {
@@ -88,77 +89,69 @@ func main() {
 //	fmt.Printf("%#v\n", t)
 }
 
+type timeAdder func (time.Time) time.Time
+
 func initArchive() archive {
     var countSlots uint = 1 + config.secondly + config.minutely + config.hourly +
         config.daily + config.weekly + config.monthly + config.yearly
     var a = archive{slots: make([]slot, countSlots)}
     var t = time.Now().UTC()
-    var index int = 1
 
     a.slots[0].maxTime = time.Time(t)
+    a.numSlots = 1
 
     t = t.Truncate(time.Second)
-    d, err := time.ParseDuration("1s")
-    if err != nil {
-        panic("Implementation Fail: Invalid minutely duration")
-    }
-    for i := uint(0); i < config.secondly; i++ {
-        a.slots[index].maxTime = time.Time(t)
-        t = t.Add(-d)
-        index += 1
-    }
+    t = a.makeSlots(config.secondly, t, makeDurationTimeAdder("1s"))
 
     t = t.Truncate(time.Minute)
-    d, err = time.ParseDuration("1m")
-    if err != nil {
-        panic("Implementation Fail: Invalid minutely duration")
-    }
-    for i := uint(0); i < config.minutely; i++ {
-        a.slots[index].maxTime = time.Time(t)
-        t = t.Add(-d)
-        index += 1
-    }
+    t = a.makeSlots(config.minutely, t, makeDurationTimeAdder("1m"))
 
     t = t.Truncate(time.Hour)
-    d, err = time.ParseDuration("1h")
-    if err != nil {
-        panic("Implementation Fail: Invalid hourly duration")
-    }
-    for i := uint(0); i < config.hourly; i++ {
-        a.slots[index].maxTime = time.Time(t)
-        t = t.Add(-d)
-        index += 1
-    }
+    t = a.makeSlots(config.hourly, t, makeDurationTimeAdder("1h"))
 
     t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
-    for i := uint(0); i < config.daily; i++ {
-        a.slots[index].maxTime = time.Time(t)
-        t = t.AddDate(0, 0, -1)
-        index += 1
-    }
+    t = a.makeSlots(config.daily, t, func(t time.Time) time.Time {
+        return t.AddDate(0, 0, -1)
+    })
 
     t = endOfPreviousWeek(t)
-    for i := uint(0); i < config.weekly; i++ {
-        a.slots[index].maxTime = time.Time(t)
-        t = t.AddDate(0, 0, -7)
-        index += 1
-    }
+    t = a.makeSlots(config.weekly, t, func(t time.Time) time.Time {
+        return t.AddDate(0, 0, -7)
+    })
 
     t = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
-    for i := uint(0); i < config.monthly; i++ {
-        a.slots[index].maxTime = time.Time(t)
-        t = t.AddDate(0, -1, 0)
-        index += 1
-    }
+    t = a.makeSlots(config.monthly, t, func(t time.Time) time.Time {
+        return t.AddDate(0, -1, 0)
+    })
 
     t = time.Date(t.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
-    for i := uint(0); i < config.yearly; i++ {
-        a.slots[index].maxTime = time.Time(t)
-        t = t.AddDate(-1, 0, 0)
-        index += 1
-    }
+    t = a.makeSlots(config.yearly, t, func(t time.Time) time.Time {
+        return t.AddDate(-1, 0, 0)
+    })
 
     return a
+}
+
+func (a *archive) makeSlots(amount uint, startTime time.Time, adder timeAdder) time.Time {
+    var t = startTime
+    var index = a.numSlots
+    for i := index; i < index + amount; i++ {
+        a.slots[i].maxTime = time.Time(t)
+        a.numSlots++
+        t = adder(t)
+    }
+    return t
+}
+
+func makeDurationTimeAdder(duration string) timeAdder {
+    d, err := time.ParseDuration(duration)
+    if err != nil {
+        panic("Implementation Fail: Invalid duration: " + duration)
+    }
+
+    return func(t time.Time) time.Time {
+        return t.Add(-d)
+    }
 }
 
 func endOfPreviousWeek(t time.Time) time.Time {
@@ -200,9 +193,13 @@ func (a *archive) swapIn(entry string) (string, error) {
     var s *slot = nil
     var swappedOut = entry
 
-    for i := 0; i < len(a.slots); i++ {
-        s = &a.slots[i]
-        if t.After(s.maxTime) {
+    for i := uint(0); i < a.numSlots; i++ {
+        if i < a.numSlots {
+            s = &a.slots[i]
+        } else {
+            s = nil
+        }
+        if s == nil || t.After(s.maxTime) {
             s = &a.slots[i - 1]
             if s.t == nil || t.After(*s.t) {
                 swappedOut = s.value
