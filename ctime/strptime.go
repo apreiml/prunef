@@ -66,7 +66,8 @@ func (state *parseState) expect(expected string) {
 }
 
 func (state *parseState) readInt(chars int) int {
-	i, err := strconv.Atoi(string(state.read(chars)))
+	s := string(state.read(chars))
+	i, err := strconv.Atoi(s)
 	if err != nil {
 		panic("Parse int error")
 	}
