@@ -193,7 +193,7 @@ func (a *archive) swapIn(entry string) (string, error) {
     var s *slot = nil
     var swappedOut = entry
 
-    for i := uint(0); i < a.numSlots; i++ {
+    for i := uint(0); i <= a.numSlots; i++ {
         if i < a.numSlots {
             s = &a.slots[i]
         } else {
