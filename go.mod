@@ -1,3 +1,3 @@
-module git.sr.ht/apreiml/prunef
+module git.sr.ht/~apreiml/prunef
 
 go 1.13

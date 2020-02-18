@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"git.sr.ht/apreiml/prunef/ctime"
+	"git.sr.ht/~apreiml/prunef/ctime"
 	"os"
 	"path/filepath"
 	"time"
