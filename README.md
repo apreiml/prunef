@@ -1,28 +1,40 @@
 # prunef
 
-Takes in a list of backup archive names containing the date in the filename
-and filters entries that need to be pruned by given rules. The date will be
-parsed using a format string similar to the posix format stirngs used in the
-date(1) util.
+Takes an unsorted list of backup names, containing the time created, and
+returns a list of backups for deletion. The backup rotation rules are given via
+command line args. A date(1) like format specifier is required to parse the
+date from the backup names.
 
-The following example will make prunef to keep 7 daily, 4 weekly and 6
-monthly backups. The created date will be parsed using the format given
-as arg.
+The following example will make prunef to keep 7 daily, 4 weekly and 6 monthly
+backups.
 
 ```sh
-prunef -keep-daily 7 \
-       -keep-weekly 4 \
-       -keep-monthly 6 \
+prunef --keep-daily 7 \
+       --keep-weekly 4 \
+       --keep-monthly 6 \
        "example.org_%Y-%m-%d_%H-%M-%S.tar.gz"
 ```
 
-To list backups that will should be kept use the `-invert` option.
+By default it will parse the dates as created from the local timezone and it
+works internal with UTC only. If the entries are created in
+UTC use the `--utc` flag.
 
-By default it will parse the dates as created from the local timezone
-and it works internal with UTC only. If the entries are created in
-UTC use the `-utc` flag.
+To list backups that will should be kept use the `--invert` option.
 
 ## Backup slots
 
-// TODO
+The algorithm works by creating timestamp slots according to the rules given.
+The first slot is always now. A slot ends where the next timestamp begins.
+Those are filled with entries, that are between slot timestamp and next
+timestamp. If an entry exists, it will be replaced if another matches the
+slot and is more recent.
+
+Slots may not be filled, if there is no entry matching the timestamps.
+That means you will only fill all slots, if the backups are created
+with lower intervals than the lowest slot interval. If for example
+a backup is created every 2 hours and `--keep-hourly 4` is provided,
+two backups will be selected for pruning.
+
+If no arguments are given, only one slot with now as timestamp will be
+created. Hence the latest backup will never be returned to be pruned.
 
