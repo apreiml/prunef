@@ -32,8 +32,15 @@ Slots may not be filled, if there is no entry matching the timestamps.
 That means you will only fill all slots, if the backups are created
 with lower intervals than the lowest slot interval. If for example
 a backup is created every 2 hours and `--keep-hourly 4` is provided,
-two backups will be selected for pruning.
+only 2 backups will be kept.
 
 If no arguments are given, only one slot with now as timestamp will be
 created. Hence the latest backup will never be returned to be pruned.
+
+## Contributing
+
+You can [send patches to the mailing list][ML] or use the [GitHub Mirror][GitHub].
+
+[GitHub]: https://github.com/apreiml/prunef
+[ML]: https://lists.sr.ht/%7Eapreiml/public-inbox
 
