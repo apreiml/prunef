@@ -5,7 +5,7 @@ deletion. The backup rotation rules are given via command line args. The backup
 names need to contain the time and a date(1) like format specifier is required
 to parse those.
 
-The following example will make prunef to keep 7 daily, 4 weekly and 6 monthly
+The following example will make prunef keep 7 daily, 4 weekly and 6 monthly
 backups.
 
 ```sh
@@ -18,7 +18,7 @@ prunef --keep-daily 7 \
 By default it will parse the dates using the local timezone. The algorithm uses
 UTC internaly. If the entries are created in UTC use the `--utc` flag.
 
-To list backups that will should be kept use the `--invert` option.
+To list backups that should be kept use the `--invert` option.
 
 ## Backup slots
 
