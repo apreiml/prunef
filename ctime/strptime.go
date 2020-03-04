@@ -107,7 +107,12 @@ func (state *parseState) parseFormat() {
 		state.expect("/")
 		state.time.day = state.readInt(2)
 		state.expect("/")
-		state.time.year = state.readInt(4)
+		year := state.readInt(2)
+		if year >= 69 {
+			state.time.year = 1900 + year
+		} else {
+			state.time.year = 2000 + year
+		}
 	case 'H':
 		state.time.hour = state.readInt(2)
 	case 'M':
