@@ -18,7 +18,7 @@ prunef --keep-daily 7 \
 By default it will parse the dates using the local timezone. The algorithm uses
 UTC internaly. If the entries are created in UTC use the `--utc` flag.
 
-To list backups that should be kept use the `--invert` option.
+To list backups that should be kept use the `--list-kept` option.
 
 ## Backup slots
 

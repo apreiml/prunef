@@ -10,12 +10,11 @@ import (
 	"time"
 )
 
-var location = time.Local
-var format string
-
 var config = struct {
 	secondly, minutely, hourly, daily, weekly, monthly, yearly uint
 	utc, printSlots, invert                                   bool
+	format string
+	location *time.Location
 }{}
 
 type slot struct {
@@ -30,34 +29,7 @@ type archive struct {
 }
 
 func main() {
-	flag.Usage = func() {
-		fmt.Printf("Usage: %s [options] FORMAT\n", filepath.Base(os.Args[0]))
-		flag.PrintDefaults()
-	}
-
-	flag.UintVar(&config.secondly, "keep-secondly", 0, "Number of secondly entries to keep.")
-	flag.UintVar(&config.minutely, "keep-minutely", 0, "Number of minutely entries to keep.")
-	flag.UintVar(&config.hourly, "keep-hourly", 0, "Number of hourly entries to keep.")
-	flag.UintVar(&config.daily, "keep-daily", 0, "Number of daily entries to keep.")
-	flag.UintVar(&config.weekly, "keep-weekly", 0, "Number of weekly entries to keep.")
-	flag.UintVar(&config.monthly, "keep-monthly", 0, "Number of monthly entries to keep.")
-	flag.UintVar(&config.yearly, "keep-yearly", 0, "Number of yearly entries to keep.")
-	flag.BoolVar(&config.utc, "utc", false, "Expect entry dates in UTC.")
-	flag.BoolVar(&config.invert, "invert", false, "Show entries to keep instead of entries to prune.")
-	flag.BoolVar(&config.printSlots, "print-slots", false, "Print slots and exit.")
-	flag.Parse()
-
-	args := flag.Args()
-	if len(args) != 1 {
-		flag.Usage()
-		os.Exit(1)
-	}
-	format = args[0]
-
-	if config.utc {
-		location = time.UTC
-	}
-
+	parseArgs()
 	archive := initArchive()
 
 	if config.printSlots {
@@ -86,6 +58,73 @@ func main() {
 	if config.invert {
 		archive.printValues()
 	}
+}
+
+func parseArgs() {
+	flag.Usage = func() {
+		fmt.Printf("Usage: %s [options] FORMAT\n", filepath.Base(os.Args[0]))
+		fmt.Println(`
+  --list-kept
+        Show entries to keep instead of entries to prune.
+  --keep-daily uint
+        Number of daily entries to keep.
+  --keep-hourly uint
+        Number of hourly entries to keep.
+  --keep-minutely uint
+        Number of minutely entries to keep.
+  --keep-monthly uint
+        Number of monthly entries to keep.
+  --keep-secondly uint
+        Number of secondly entries to keep.
+  --keep-weekly uint
+        Number of weekly entries to keep.
+  --keep-yearly uint
+        Number of yearly entries to keep.
+  --print-slots
+        Print slots and exit.
+  --utc
+        Expect entry dates in UTC.
+
+FORMAT can have following specifiers:
+
+  %%    a literal %
+  %Y    year
+  %m    month (01..12)
+  %d    day of month (01..)
+  %H    hour (00..23)
+  %M    minute (00..59)
+  %S    second (00..59)
+  %D    short for %m/%d/%y
+`)
+	}
+
+	flag.UintVar(&config.secondly, "keep-secondly", 0, "Number of secondly entries to keep.")
+	flag.UintVar(&config.minutely, "keep-minutely", 0, "Number of minutely entries to keep.")
+	flag.UintVar(&config.hourly, "keep-hourly", 0, "Number of hourly entries to keep.")
+	flag.UintVar(&config.daily, "keep-daily", 0, "Number of daily entries to keep.")
+	flag.UintVar(&config.weekly, "keep-weekly", 0, "Number of weekly entries to keep.")
+	flag.UintVar(&config.monthly, "keep-monthly", 0, "Number of monthly entries to keep.")
+	flag.UintVar(&config.yearly, "keep-yearly", 0, "Number of yearly entries to keep.")
+	flag.BoolVar(&config.utc, "utc", false, "Expect entry dates in UTC.")
+	flag.BoolVar(&config.invert, "invert", false, "Show entries to keep instead of entries to prune.")
+	flag.BoolVar(&config.invert, "list-kept", false, "Show entries to keep instead of entries to prune. Replaces --invert")
+	flag.BoolVar(&config.printSlots, "print-slots", false, "Print slots and exit.")
+	flag.Parse()
+
+	args := flag.Args()
+	if len(args) != 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	config.format = args[0]
+
+	if config.utc {
+		config.location = time.UTC
+	} else {
+		config.location = time.Local
+	}
+
 }
 
 type timeAdder func(time.Time) time.Time
@@ -180,7 +219,7 @@ func (a archive) printValues() {
 // slot will be returned to be pruned. Otherwise the given entry will be
 // returned.
 func (a *archive) swapIn(entry string) (string, error) {
-	t, err := ctime.Parse(format, entry, location)
+	t, err := ctime.Parse(config.format, entry, config.location)
 	if err != nil {
 		return "", err
 	}
