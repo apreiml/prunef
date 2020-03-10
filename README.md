@@ -37,10 +37,32 @@ only 2 backups will be kept.
 If no arguments are given, only one slot with now as timestamp will be
 created. Hence the latest backup will never be returned to be pruned.
 
+## Building
+
+Required dependencies:
+
+ * go (>= 1.13)
+ * scdoc
+
+Compile with make:
+
+```
+$ make
+```
+
+## Installation
+
+```
+$ make install
+```
+
+For Arch Linux there's also an [AUR package][AUR] available.
+
 ## Contributing
 
 You can [send patches to the mailing list][ML] or use the [GitHub Mirror][GitHub].
 
 [GitHub]: https://github.com/apreiml/prunef
 [ML]: https://lists.sr.ht/%7Eapreiml/public-inbox
+[AUR]: https://aur.archlinux.org/packages/prunef/
 
