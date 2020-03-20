@@ -12,9 +12,9 @@ import (
 
 var config = struct {
 	secondly, minutely, hourly, daily, weekly, monthly, yearly uint
-	utc, printSlots, invert                                   bool
-	format string
-	location *time.Location
+	utc, printSlots, invert                                    bool
+	format                                                     string
+	location                                                   *time.Location
 }{}
 
 type slot struct {
@@ -221,7 +221,7 @@ func (a archive) printValues() {
 func (a *archive) swapIn(entry string) (string, error) {
 	t, err := ctime.Parse(config.format, entry, config.location)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Error parsing '%s': %s", entry, err.Error())
 	}
 
 	// do not prune entries, that are made while running prunef

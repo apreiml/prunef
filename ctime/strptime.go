@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -18,6 +19,7 @@ type parseState struct {
 	format              []rune
 	value               []rune
 	indexFormat, indexS int
+	readS               int
 	time                tm
 }
 
@@ -27,12 +29,21 @@ func Parse(format, value string, loc *time.Location) (t time.Time, err error) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.New(fmt.Sprintf("Parsing date failed: %s", r))
+			indexMarker := state.sprintIndexMarker()
+			msg := fmt.Sprintf("%s\n%s", r, indexMarker)
+			err = errors.New(msg)
 		}
 	}()
 
 	state.parse()
 	return state.time.toTime(), nil
+}
+
+func (state parseState) sprintIndexMarker() string {
+	prefix := "at: "
+	indexMarkerOffset := state.indexS + len(prefix)
+	return fmt.Sprintf("\t%s%s\n\t%s^", prefix, string(state.value),
+		strings.Repeat(" ", indexMarkerOffset))
 }
 
 func (t *tm) toTime() time.Time {
@@ -54,23 +65,29 @@ func (state *parseState) read(chars int) []rune {
 	begin := state.indexS
 	end := begin + chars
 
-	state.indexS = end
+	state.readS = end
 	return state.value[begin:end]
 }
 
-func (state *parseState) expect(expected string) {
-	got := string(state.read(len(expected)))
-	if got != expected {
-		panic(fmt.Sprintf("Didn't expect %s", got))
-	}
+func (state *parseState) next() {
+	state.indexS = state.readS
 }
 
-func (state *parseState) readInt(chars int) int {
+func (state *parseState) expectNext(expected string) {
+	got := string(state.read(len(expected)))
+	if got != expected {
+		panic(fmt.Sprintf("Expected %s", expected))
+	}
+	state.next()
+}
+
+func (state *parseState) nextInt(chars int) int {
 	s := string(state.read(chars))
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		panic("Parse int error")
+		panic("Expected integer")
 	}
+	state.next()
 	return i
 }
 
@@ -84,10 +101,7 @@ func (state *parseState) parse() {
 		if f == '%' {
 			state.parseFormat()
 		} else {
-			c := state.read(1)[0]
-			if c != f {
-				panic(fmt.Sprintf("Unexpected char %c, expected: %c", c, f))
-			}
+			state.expectNext(string(f))
 		}
 	}
 }
@@ -95,31 +109,31 @@ func (state *parseState) parse() {
 func (state *parseState) parseFormat() {
 	switch f := state.readFormat(); f {
 	case '%':
-		state.expect("%")
+		state.expectNext("%")
 	case 'Y':
-		state.time.year = state.readInt(4)
+		state.time.year = state.nextInt(4)
 	case 'm':
-		state.time.month = state.readInt(2)
+		state.time.month = state.nextInt(2)
 	case 'd':
-		state.time.day = state.readInt(2)
+		state.time.day = state.nextInt(2)
 	case 'D':
-		state.time.month = state.readInt(2)
-		state.expect("/")
-		state.time.day = state.readInt(2)
-		state.expect("/")
-		year := state.readInt(2)
+		state.time.month = state.nextInt(2)
+		state.expectNext("/")
+		state.time.day = state.nextInt(2)
+		state.expectNext("/")
+		year := state.nextInt(2)
 		if year >= 69 {
 			state.time.year = 1900 + year
 		} else {
 			state.time.year = 2000 + year
 		}
 	case 'H':
-		state.time.hour = state.readInt(2)
+		state.time.hour = state.nextInt(2)
 	case 'M':
-		state.time.minute = state.readInt(2)
+		state.time.minute = state.nextInt(2)
 	case 'S':
-		state.time.second = state.readInt(2)
+		state.time.second = state.nextInt(2)
 	default:
-		panic(fmt.Sprintf("Unsupported format specifier %c. Patches are welcome.", f))
+		panic(fmt.Sprintf("Unsupported format specifier %%%c. Patches are welcome.", f))
 	}
 }
