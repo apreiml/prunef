@@ -32,7 +32,7 @@ func main() {
 	parseArgs()
 	archive := initArchive()
 
-	if config.printSlots {
+	if config.printSlots && len(config.format) == 0 {
 		archive.printSlots()
 		os.Exit(0)
 	}
@@ -55,7 +55,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if config.invert {
+	if config.printSlots {
+		archive.printSlots()
+	} else if config.invert {
 		archive.printValues()
 	}
 }
@@ -112,12 +114,20 @@ FORMAT can have following specifiers:
 	flag.Parse()
 
 	args := flag.Args()
-	if len(args) != 1 {
-		flag.Usage()
-		os.Exit(1)
+	if len(args) != 1  {
+		if !config.printSlots {
+			flag.Usage()
+			os.Exit(1)
+		}
+	} else {
+		config.format = args[0]
+		// if there are args and print-slots is enabled, use invert
+		// to hide pruned output so that the slots can be printed
+		// with assigned values at the end of the program
+		if config.printSlots {
+			config.invert = true
+		}
 	}
-
-	config.format = args[0]
 
 	if config.utc {
 		config.location = time.UTC
@@ -197,13 +207,13 @@ func endOfPreviousWeek(t time.Time) time.Time {
 	return t.AddDate(0, 0, -int(t.Weekday()))
 }
 
-func (s slot) String() string {
-	return fmt.Sprintf("%s", s.maxTime)
-}
-
 func (a archive) printSlots() {
 	for _, s := range a.slots {
-		fmt.Printf("%s\n", s)
+		fmt.Printf("%s", s.maxTime)
+		if len(s.value) > 0 {
+			fmt.Printf("\t%s\t%s", s.t.UTC(), s.value)
+		}
+		fmt.Println()
 	}
 }
 
