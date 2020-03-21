@@ -65,7 +65,7 @@ func main() {
 func parseArgs() {
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [options] FORMAT\n", filepath.Base(os.Args[0]))
-		fmt.Println(`
+		fmt.Printf(`
   --list-kept
         Show entries to keep instead of entries to prune.
   --keep-daily uint
@@ -89,15 +89,14 @@ func parseArgs() {
 
 FORMAT can have following specifiers:
 
-  %%    a literal %
-  %Y    year
-  %m    month (01..12)
-  %d    day of month (01..)
-  %H    hour (00..23)
-  %M    minute (00..59)
-  %S    second (00..59)
-  %D    short for %m/%d/%y
-`)
+  %%%%    a literal %%
+  %%Y    year
+  %%m    month (01..12)
+  %%d    day of month (01..)
+  %%H    hour (00..23)
+  %%M    minute (00..59)
+  %%S    second (00..59)
+  %%D    short for %%m/%%d/%%y`)
 	}
 
 	flag.UintVar(&config.secondly, "keep-secondly", 0, "Number of secondly entries to keep.")

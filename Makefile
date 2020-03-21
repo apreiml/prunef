@@ -46,6 +46,9 @@ uninstall:
 	${RMDIR_IF_EMPTY} $(MANDIR)/man1
 	${RMDIR_IF_EMPTY} $(MANDIR)
 
+test:
+	$(GO) test ./...
+
 .DEFAULT_GOAL := all
 
 .PHONY: all clean install uninstall
