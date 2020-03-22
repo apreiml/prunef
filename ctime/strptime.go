@@ -81,11 +81,26 @@ func (state *parseState) expectNext(expected string) {
 	state.next()
 }
 
-func (state *parseState) nextInt(chars int) int {
-	s := string(state.read(chars))
+func (state *parseState) readInt(length int) int {
+	s := string(state.read(length))
 	i, err := strconv.Atoi(s)
 	if err != nil {
 		panic("Expected integer")
+	}
+	return i
+}
+
+
+func (state *parseState) nextInt(length int) int {
+	i := state.readInt(length)
+	state.next()
+	return i
+}
+
+func (state *parseState) nextIntBetween(length, min, max int) int {
+	i := state.readInt(length)
+	if (i < min || i > max) {
+		panic(fmt.Sprintf("Expected integer between %d and %d", min, max))
 	}
 	state.next()
 	return i
@@ -111,28 +126,28 @@ func (state *parseState) parseFormat() {
 	case '%':
 		state.expectNext("%")
 	case 'Y':
-		state.time.year = state.nextInt(4)
+		state.time.year = state.nextIntBetween(4, 0000, 9999)
 	case 'm':
-		state.time.month = state.nextInt(2)
+		state.time.month = state.nextIntBetween(2, 1, 12)
 	case 'd':
-		state.time.day = state.nextInt(2)
+		state.time.day = state.nextIntBetween(2, 1, 31)
 	case 'D':
-		state.time.month = state.nextInt(2)
+		state.time.month = state.nextIntBetween(2, 1, 12)
 		state.expectNext("/")
-		state.time.day = state.nextInt(2)
+		state.time.day = state.nextIntBetween(2, 1, 31)
 		state.expectNext("/")
-		year := state.nextInt(2)
+		year := state.nextIntBetween(2, 00, 99)
 		if year >= 69 {
 			state.time.year = 1900 + year
 		} else {
 			state.time.year = 2000 + year
 		}
 	case 'H':
-		state.time.hour = state.nextInt(2)
+		state.time.hour = state.nextIntBetween(2, 0, 24)
 	case 'M':
-		state.time.minute = state.nextInt(2)
+		state.time.minute = state.nextIntBetween(2, 0, 59)
 	case 'S':
-		state.time.second = state.nextInt(2)
+		state.time.second = state.nextIntBetween(2, 0, 59)
 	default:
 		panic(fmt.Sprintf("Unsupported format specifier %%%c. Patches are welcome.", f))
 	}
